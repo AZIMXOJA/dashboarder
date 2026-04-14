@@ -36,7 +36,7 @@ DEFAULT_GIDS = {
 async def fetch_sheet(name):
     gid = SHEET_GIDS.get(name) or DEFAULT_GIDS.get(name, "0")
     url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid={gid}"
-    async with httpx.AsyncClient(timeout=30) as c:
+    async with httpx.AsyncClient(timeout=30, follow_redirects=True) as c:
         r = await c.get(url); r.raise_for_status()
     return list(csv.DictReader(io.StringIO(r.text)))
 
