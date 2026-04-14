@@ -1,1 +1,1219 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Smartup Dashboard</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #0a0a0f;
+  --surface:  #12121a;
+  --surface2: #1a1a26;
+  --border:   #2a2a3d;
+  --accent:   #7c6dfa;
+  --accent2:  #fa6d8a;
+  --accent3:  #6dfabd;
+  --accent4:  #fac96d;
+  --text:     #e8e8f0;
+  --muted:    #6b6b8a;
+  --green:    #3dffa0;
+  --red:      #ff5566;
+  --yellow:   #ffd166;
+  --r:        12px;
+  --r2:       20px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── HEADER ── */
+.header {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(10,10,15,0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 16px;
+  display: flex; align-items: center; gap: 12px;
+}
+.header-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  flex-shrink: 0;
+}
+.header-selects {
+  display: flex; gap: 8px; flex: 1; overflow: hidden;
+}
+.sel {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  cursor: pointer;
+  flex: 1; min-width: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.currency-toggle {
+  display: flex;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.currency-btn {
+  padding: 6px 10px;
+  font-size: 11px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  transition: all .2s;
+}
+.currency-btn.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ── NAV ── */
+.nav {
+  display: flex;
+  overflow-x: auto;
+  gap: 4px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  scrollbar-width: none;
+}
+.nav::-webkit-scrollbar { display: none; }
+.nav-btn {
+  white-space: nowrap;
+  padding: 7px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .2s;
+  flex-shrink: 0;
+}
+.nav-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* ── MAIN ── */
+.main { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+
+/* ── SCREEN ── */
+.screen { display: none; flex-direction: column; gap: 16px; }
+.screen.active { display: flex; }
+
+/* ── CARDS GRID ── */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.cards-grid.three { grid-template-columns: repeat(3, 1fr); }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+  transition: transform .15s, border-color .15s;
+  cursor: pointer;
+}
+.card:active { transform: scale(0.97); }
+.card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--card-accent, var(--accent));
+}
+.card-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.card-value {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  letter-spacing: 1px;
+  line-height: 1;
+  color: var(--text);
+}
+.card-value.big { font-size: 34px; }
+.card-sub {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'IBM Plex Mono', monospace;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+.delta.up   { background: rgba(61,255,160,.12); color: var(--green); }
+.delta.down { background: rgba(255,85,102,.12); color: var(--red); }
+.delta.neu  { background: rgba(107,107,138,.12); color: var(--muted); }
+
+/* ── SECTION HEADER ── */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+.section-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  letter-spacing: 2px;
+  color: var(--text);
+}
+.section-badge {
+  font-size: 11px;
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--muted);
+  background: var(--surface2);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+/* ── CHART CONTAINER ── */
+.chart-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 16px;
+}
+.chart-wrap canvas { max-height: 200px; }
+
+/* ── TABLE ── */
+.table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  overflow: hidden;
+}
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+thead tr { background: var(--surface2); }
+th {
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+th.r, td.r { text-align: right; }
+td {
+  padding: 10px 12px;
+  font-size: 12px;
+  border-top: 1px solid var(--border);
+  white-space: nowrap;
+}
+tr:hover td { background: var(--surface2); }
+.rank {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+}
+.name-cell { max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
+.mono { font-family: 'IBM Plex Mono', monospace; }
+
+/* ── PROGRESS BAR ── */
+.progress-row {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+.progress-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 8px;
+}
+.progress-name { font-size: 12px; font-weight: 500; }
+.progress-pct {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  letter-spacing: 1px;
+}
+.progress-track {
+  height: 6px;
+  background: var(--surface2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width .6s cubic-bezier(.4,0,.2,1);
+}
+.progress-meta {
+  display: flex; justify-content: space-between;
+  margin-top: 6px; font-size: 10px; color: var(--muted);
+  font-family: 'IBM Plex Mono', monospace;
+}
+.pct-green { color: var(--green); }
+.pct-yellow { color: var(--yellow); }
+.pct-red { color: var(--red); }
+
+/* ── SEGMENT TABS ── */
+.seg-tabs {
+  display: flex;
+  background: var(--surface2);
+  border-radius: 10px;
+  padding: 3px;
+  gap: 2px;
+}
+.seg-btn {
+  flex: 1;
+  padding: 6px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .2s;
+  font-family: 'IBM Plex Sans', sans-serif;
+}
+.seg-btn.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 2px 8px rgba(0,0,0,.4);
+}
+
+/* ── DONUT LEGEND ── */
+.donut-wrap {
+  display: flex; gap: 16px; align-items: center;
+}
+.donut-wrap canvas { width: 120px !important; height: 120px !important; flex-shrink: 0; }
+.donut-legend { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.legend-item {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px;
+}
+.legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.legend-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.legend-val { font-family: 'IBM Plex Mono', monospace; color: var(--muted); font-size: 10px; }
+
+/* ── LOADER ── */
+.loader {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 16px; padding: 60px 20px;
+}
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loader-text {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ── PERIOD CHIPS ── */
+.period-chips {
+  display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none;
+}
+.period-chips::-webkit-scrollbar { display: none; }
+.chip {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .2s;
+  flex-shrink: 0;
+}
+.chip.active {
+  background: var(--surface2);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── STAT ROW ── */
+.stat-row {
+  display: flex;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.stat-item {
+  flex: 1;
+  padding: 14px 10px;
+  text-align: center;
+  border-right: 1px solid var(--border);
+}
+.stat-item:last-child { border-right: none; }
+.stat-val {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
+  color: var(--text);
+}
+.stat-lbl {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* ── GROUP TABS ── */
+.group-tabs {
+  display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none;
+  padding-bottom: 2px;
+}
+.group-tabs::-webkit-scrollbar { display: none; }
+
+/* ── ANIMATE IN ── */
+@keyframes fadeUp {
+  from { opacity:0; transform: translateY(12px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+.screen.active > * {
+  animation: fadeUp .3s ease both;
+}
+.screen.active > *:nth-child(1) { animation-delay: .02s; }
+.screen.active > *:nth-child(2) { animation-delay: .06s; }
+.screen.active > *:nth-child(3) { animation-delay: .10s; }
+.screen.active > *:nth-child(4) { animation-delay: .14s; }
+.screen.active > *:nth-child(5) { animation-delay: .18s; }
+
+/* ── EMPTY STATE ── */
+.empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+.empty-icon { font-size: 32px; margin-bottom: 8px; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-logo">SMARTUP</div>
+  <div class="header-selects">
+    <select class="sel" id="filialSel" onchange="onFilialChange()">
+      <option value="">Все филиалы</option>
+    </select>
+  </div>
+  <div class="currency-toggle">
+    <button class="currency-btn active" onclick="setCurrency('UZS',this)">UZS</button>
+    <button class="currency-btn" onclick="setCurrency('USD',this)">USD</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <button class="nav-btn active" onclick="showScreen('summary',this)">📊 Сводка</button>
+  <button class="nav-btn" onclick="showScreen('kpi',this)">🎯 План/Факт</button>
+  <button class="nav-btn" onclick="showScreen('agents',this)">👤 Агенты</button>
+  <button class="nav-btn" onclick="showScreen('products',this)">📦 Товары</button>
+  <button class="nav-btn" onclick="showScreen('clients',this)">🏪 Клиенты</button>
+</div>
+
+<div class="main">
+
+<!-- ══════════════════════════════════════
+     SCREEN: SUMMARY
+══════════════════════════════════════ -->
+<div id="screen-summary" class="screen active">
+  <!-- Period chips -->
+  <div class="period-chips">
+    <button class="chip" onclick="setPeriod('today',this)">Сегодня</button>
+    <button class="chip" onclick="setPeriod('week',this)">7 дней</button>
+    <button class="chip active" onclick="setPeriod('month',this)">Месяц</button>
+  </div>
+
+  <div id="summary-content">
+    <div class="loader"><div class="spinner"></div><div class="loader-text">Загрузка данных...</div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: KPI
+══════════════════════════════════════ -->
+<div id="screen-kpi" class="screen">
+  <div id="kpi-content">
+    <div class="loader"><div class="spinner"></div><div class="loader-text">Загрузка KPI...</div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: AGENTS
+══════════════════════════════════════ -->
+<div id="screen-agents" class="screen">
+  <div class="period-chips">
+    <button class="chip" onclick="setAgentPeriod('week',this)">7 дней</button>
+    <button class="chip active" onclick="setAgentPeriod('month',this)">Месяц</button>
+  </div>
+  <div id="agents-content">
+    <div class="loader"><div class="spinner"></div><div class="loader-text">Загрузка агентов...</div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: PRODUCTS
+══════════════════════════════════════ -->
+<div id="screen-products" class="screen">
+  <div class="seg-tabs" id="productGroupTabs">
+    <button class="seg-btn active" onclick="setGroupBy('sku',this)">SKU</button>
+    <button class="seg-btn" onclick="setGroupBy('group',this)">Группа</button>
+    <button class="seg-btn" onclick="setGroupBy('category',this)">Категория</button>
+    <button class="seg-btn" onclick="setGroupBy('brand',this)">Бренд</button>
+  </div>
+  <div id="products-content">
+    <div class="loader"><div class="spinner"></div><div class="loader-text">Загрузка товаров...</div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: CLIENTS
+══════════════════════════════════════ -->
+<div id="screen-clients" class="screen">
+  <div id="clients-content">
+    <div class="loader"><div class="spinner"></div><div class="loader-text">Загрузка клиентов...</div></div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────
+const API = window.DASHBOARD_API || 'http://localhost:8000';
+
+// ─── STATE ────────────────────────────────────────────────
+let state = {
+  filial: '',
+  currency: 'UZS',
+  period: 'month',
+  agentPeriod: 'month',
+  groupBy: 'sku',
+  usdRate: 12700,
+  activeScreen: 'summary',
+  loadedScreens: new Set(),
+};
+
+// ─── TELEGRAM INIT ────────────────────────────────────────
+if (window.Telegram?.WebApp) {
+  Telegram.WebApp.ready();
+  Telegram.WebApp.expand();
+  Telegram.WebApp.setHeaderColor('#0a0a0f');
+  Telegram.WebApp.setBackgroundColor('#0a0a0f');
+}
+
+// ─── INIT ─────────────────────────────────────────────────
+async function init() {
+  try {
+    const meta = await apiFetch('/api/meta');
+    state.usdRate = meta.usd_rate || 12700;
+
+    const sel = document.getElementById('filialSel');
+    meta.filials.forEach(f => {
+      const opt = document.createElement('option');
+      opt.value = f.filial_id;
+      opt.textContent = f.name;
+      sel.appendChild(opt);
+    });
+    loadScreen('summary');
+  } catch(e) {
+    document.getElementById('summary-content').innerHTML =
+      `<div class="empty"><div class="empty-icon">⚠️</div>Ошибка подключения к API.<br><small style="font-family:monospace">${e.message}</small></div>`;
+  }
+}
+
+// ─── API HELPER ───────────────────────────────────────────
+async function apiFetch(path) {
+  const res = await fetch(API + path);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+function qs(extra = {}) {
+  const p = {
+    filial_id: state.filial,
+    currency: state.currency,
+    ...extra
+  };
+  return '?' + Object.entries(p).filter(([,v]) => v !== undefined).map(([k,v]) => `${k}=${encodeURIComponent(v)}`).join('&');
+}
+
+// ─── NAVIGATION ───────────────────────────────────────────
+function showScreen(name, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  btn.classList.add('active');
+  state.activeScreen = name;
+  loadScreen(name);
+}
+
+function loadScreen(name) {
+  const key = name + state.filial + state.currency + state.period;
+  if (name === 'summary')  loadSummary();
+  if (name === 'kpi')      loadKpi();
+  if (name === 'agents')   loadAgents();
+  if (name === 'products') loadProducts();
+  if (name === 'clients')  loadClients();
+}
+
+// ─── CONTROLS ─────────────────────────────────────────────
+function onFilialChange() {
+  state.filial = document.getElementById('filialSel').value;
+  loadScreen(state.activeScreen);
+}
+
+function setCurrency(cur, btn) {
+  state.currency = cur;
+  document.querySelectorAll('.currency-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadScreen(state.activeScreen);
+}
+
+function setPeriod(p, btn) {
+  state.period = p;
+  document.querySelectorAll('.period-chips .chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadSummary();
+}
+
+function setAgentPeriod(p, btn) {
+  state.agentPeriod = p;
+  document.querySelectorAll('#screen-agents .chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadAgents();
+}
+
+function setGroupBy(g, btn) {
+  state.groupBy = g;
+  document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadProducts();
+}
+
+// ─── FORMATTERS ───────────────────────────────────────────
+function fmtMoney(v, cur) {
+  const n = parseFloat(v) || 0;
+  if (cur === 'USD') {
+    if (n >= 1e6) return (n/1e6).toFixed(1) + 'M$';
+    if (n >= 1e3) return (n/1e3).toFixed(0) + 'K$';
+    return '$' + n.toFixed(0);
+  }
+  if (n >= 1e9) return (n/1e9).toFixed(2) + ' млрд';
+  if (n >= 1e6) return (n/1e6).toFixed(1) + ' млн';
+  if (n >= 1e3) return (n/1e3).toFixed(0) + ' тыс';
+  return n.toLocaleString('ru');
+}
+
+function fmtNum(n) {
+  return parseInt(n).toLocaleString('ru');
+}
+
+function deltaHtml(d) {
+  if (d === null || d === undefined) return '';
+  const cls = d > 0 ? 'up' : d < 0 ? 'down' : 'neu';
+  const arrow = d > 0 ? '↑' : d < 0 ? '↓' : '→';
+  return `<span class="delta ${cls}">${arrow} ${Math.abs(d)}%</span>`;
+}
+
+function pctColor(pct) {
+  if (!pct) return 'var(--muted)';
+  if (pct >= 90) return 'var(--green)';
+  if (pct >= 70) return 'var(--yellow)';
+  return 'var(--red)';
+}
+function pctClass(pct) {
+  if (!pct) return '';
+  if (pct >= 90) return 'pct-green';
+  if (pct >= 70) return 'pct-yellow';
+  return 'pct-red';
+}
+
+// ─── CHART REGISTRY ───────────────────────────────────────
+const charts = {};
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+// ─── SCREEN: SUMMARY ─────────────────────────────────────
+async function loadSummary() {
+  const el = document.getElementById('summary-content');
+  el.innerHTML = '<div class="loader"><div class="spinner"></div><div class="loader-text">Загрузка...</div></div>';
+  destroyChart('revenueChart'); destroyChart('filialChart');
+
+  try {
+    const [summary, chartData, filialData] = await Promise.all([
+      apiFetch('/api/summary' + qs({period: state.period})),
+      apiFetch('/api/chart/revenue_by_day' + qs({period: state.period})),
+      apiFetch('/api/chart/revenue_by_filial' + qs({period: state.period})),
+    ]);
+
+    const cur = state.currency;
+    const sym = cur === 'USD' ? '$' : '₽'.replace('₽','');
+
+    el.innerHTML = `
+      <!-- KPI cards -->
+      <div class="cards-grid">
+        <div class="card" style="--card-accent: var(--accent)">
+          <div class="card-label">Выручка</div>
+          <div class="card-value big">${fmtMoney(summary.revenue, cur)}</div>
+          ${deltaHtml(summary.revenue_delta)}
+          <div class="card-sub">${cur}</div>
+        </div>
+        <div class="card" style="--card-accent: var(--accent2)">
+          <div class="card-label">Заказы</div>
+          <div class="card-value big">${fmtNum(summary.orders)}</div>
+          ${deltaHtml(summary.orders_delta)}
+          <div class="card-sub">шт</div>
+        </div>
+        <div class="card" style="--card-accent: var(--accent3)">
+          <div class="card-label">АКБ</div>
+          <div class="card-value">${fmtNum(summary.akb)}</div>
+          ${deltaHtml(summary.akb_delta)}
+          <div class="card-sub">из ${fmtNum(summary.okb)} ОКБ</div>
+        </div>
+        <div class="card" style="--card-accent: var(--accent4)">
+          <div class="card-label">Средний чек</div>
+          <div class="card-value">${fmtMoney(summary.avg_order, cur)}</div>
+          <div class="card-sub">${cur}</div>
+        </div>
+      </div>
+
+      <!-- Revenue chart -->
+      <div class="chart-wrap">
+        <div class="section-header" style="margin-bottom:12px">
+          <span class="section-title">ВЫРУЧКА</span>
+          <span class="section-badge">${cur}</span>
+        </div>
+        <canvas id="revenueChart"></canvas>
+      </div>
+
+      <!-- Secondary stats -->
+      <div class="stat-row">
+        <div class="stat-item">
+          <div class="stat-val">${fmtMoney(summary.discount, cur)}</div>
+          <div class="stat-lbl">Скидки</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val">${summary.discount_pct}%</div>
+          <div class="stat-lbl">% скидок</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val">${fmtMoney(summary.returns_sum, cur)}</div>
+          <div class="stat-lbl">Возвраты</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val">${summary.returns_pct}%</div>
+          <div class="stat-lbl">% возвр</div>
+        </div>
+      </div>
+
+      <!-- Weight stats -->
+      <div class="stat-row">
+        <div class="stat-item">
+          <div class="stat-val">${summary.weight_netto}</div>
+          <div class="stat-lbl">Вес нетто</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val">${summary.weight_brutto}</div>
+          <div class="stat-lbl">Вес брутто</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val">${fmtMoney(summary.gift_amount, cur)}</div>
+          <div class="stat-lbl">Промо</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val">${fmtNum(summary.returns_count)}</div>
+          <div class="stat-lbl">Возвр шт</div>
+        </div>
+      </div>
+
+      <!-- Filials chart -->
+      ${filialData.data.length > 0 ? `
+      <div class="chart-wrap">
+        <div class="section-header" style="margin-bottom:12px">
+          <span class="section-title">ПО ФИЛИАЛАМ</span>
+          <span class="section-badge">${cur}</span>
+        </div>
+        <div class="donut-wrap">
+          <canvas id="filialChart"></canvas>
+          <div class="donut-legend" id="filialLegend"></div>
+        </div>
+      </div>` : ''}
+    `;
+
+    // Revenue line chart
+    const labels = chartData.data.map(d => d.label);
+    const values = chartData.data.map(d => d.revenue);
+    const ctx = document.getElementById('revenueChart').getContext('2d');
+    const grad = ctx.createLinearGradient(0, 0, 0, 200);
+    grad.addColorStop(0, 'rgba(124,109,250,0.4)');
+    grad.addColorStop(1, 'rgba(124,109,250,0)');
+    charts['revenueChart'] = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          borderColor: '#7c6dfa',
+          backgroundColor: grad,
+          borderWidth: 2,
+          pointRadius: values.length > 20 ? 0 : 3,
+          pointBackgroundColor: '#7c6dfa',
+          tension: 0.4,
+          fill: true,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false }, tooltip: {
+          callbacks: { label: ctx => fmtMoney(ctx.raw, cur) }
+        }},
+        scales: {
+          x: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: '#6b6b8a', font: { size: 10 }, maxTicksLimit: 8 } },
+          y: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: '#6b6b8a', font: { size: 10 }, callback: v => fmtMoney(v, cur) } }
+        }
+      }
+    });
+
+    // Filial donut chart
+    if (filialData.data.length > 0) {
+      const COLORS = ['#7c6dfa','#fa6d8a','#6dfabd','#fac96d','#6db4fa','#fa6dfa','#adfa6d'];
+      const top = filialData.data.slice(0, 7);
+      const ctx2 = document.getElementById('filialChart').getContext('2d');
+      charts['filialChart'] = new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+          labels: top.map(d => d.name),
+          datasets: [{
+            data: top.map(d => d.revenue),
+            backgroundColor: top.map((_, i) => COLORS[i % COLORS.length]),
+            borderWidth: 0,
+            hoverOffset: 4,
+          }]
+        },
+        options: {
+          responsive: false,
+          cutout: '65%',
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      const totalRev = top.reduce((s, d) => s + d.revenue, 0);
+      document.getElementById('filialLegend').innerHTML = top.map((d, i) => `
+        <div class="legend-item">
+          <div class="legend-dot" style="background:${COLORS[i%COLORS.length]}"></div>
+          <div class="legend-name">${d.name}</div>
+          <div class="legend-val">${totalRev ? Math.round(d.revenue/totalRev*100) : 0}%</div>
+        </div>
+      `).join('');
+    }
+
+  } catch(e) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>${e.message}</div>`;
+  }
+}
+
+// ─── SCREEN: KPI ─────────────────────────────────────────
+async function loadKpi() {
+  const el = document.getElementById('kpi-content');
+  el.innerHTML = '<div class="loader"><div class="spinner"></div><div class="loader-text">Загрузка KPI...</div></div>';
+  try {
+    const data = await apiFetch('/api/kpi' + qs());
+    const cur = state.currency;
+
+    if (!data.data.length) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">🎯</div>Планы на текущий месяц не заданы</div>';
+      return;
+    }
+
+    const withPlan = data.data.filter(r => r.plan_rev > 0);
+    const withoutPlan = data.data.filter(r => r.plan_rev === 0);
+
+    // Summary totals
+    const totalFact = data.data.reduce((s, r) => s + (r.fact_rev||0), 0);
+    const totalPlan = data.data.reduce((s, r) => s + (r.plan_rev||0), 0);
+    const totalPct  = totalPlan ? Math.round(totalFact/totalPlan*100) : null;
+
+    el.innerHTML = `
+      <div class="cards-grid">
+        <div class="card" style="--card-accent:var(--accent3)">
+          <div class="card-label">Факт</div>
+          <div class="card-value">${fmtMoney(totalFact, cur)}</div>
+          <div class="card-sub">${cur}</div>
+        </div>
+        <div class="card" style="--card-accent:var(--muted)">
+          <div class="card-label">План</div>
+          <div class="card-value">${fmtMoney(totalPlan, cur)}</div>
+          <div class="card-sub">${totalPct !== null ? `<span class="${pctClass(totalPct)}">${totalPct}%</span>` : 'без плана'}</div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <span class="section-title">ПО ЗОНАМ</span>
+        <span class="section-badge">${withPlan.length} с планом</span>
+      </div>
+
+      <div id="kpi-rooms">
+        ${data.data.map(r => {
+          const pct = r.pct_rev;
+          const fillColor = pct ? pctColor(pct) : 'var(--muted)';
+          const fillW = pct ? Math.min(pct, 100) : 0;
+          return `
+          <div class="progress-row">
+            <div class="progress-header">
+              <div class="progress-name">${r.room_name}</div>
+              <div class="progress-pct ${pctClass(pct)}">${pct !== null ? pct+'%' : '—'}</div>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" style="width:${fillW}%;background:${fillColor}"></div>
+            </div>
+            <div class="progress-meta">
+              <span>Факт: ${fmtMoney(r.fact_rev, cur)}</span>
+              <span>План: ${r.plan_rev ? fmtMoney(r.plan_rev, cur) : '—'}</span>
+            </div>
+            <div class="progress-meta" style="margin-top:2px">
+              <span>Заказы: ${r.fact_q}${r.plan_q ? '/'+r.plan_q : ''}</span>
+              <span>АКБ: ${r.fact_a}${r.plan_a ? '/'+r.plan_a : ''}</span>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    `;
+  } catch(e) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>${e.message}</div>`;
+  }
+}
+
+// ─── SCREEN: AGENTS ──────────────────────────────────────
+async function loadAgents() {
+  const el = document.getElementById('agents-content');
+  el.innerHTML = '<div class="loader"><div class="spinner"></div><div class="loader-text">Загрузка агентов...</div></div>';
+  destroyChart('agentsChart');
+  try {
+    const data = await apiFetch('/api/agents' + qs({period: state.agentPeriod}));
+    const cur = state.currency;
+    const top = data.data.slice(0, 5);
+
+    el.innerHTML = `
+      <!-- Top 5 bar chart -->
+      <div class="chart-wrap">
+        <div class="section-header" style="margin-bottom:12px">
+          <span class="section-title">ТОП АГЕНТОВ</span>
+          <span class="section-badge">${cur}</span>
+        </div>
+        <canvas id="agentsChart" style="max-height:180px"></canvas>
+      </div>
+
+      <!-- Table -->
+      <div class="section-header">
+        <span class="section-title">ВСЕ АГЕНТЫ</span>
+        <span class="section-badge">${data.data.length}</span>
+      </div>
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Агент</th>
+                <th class="r">Выручка</th>
+                <th class="r">Заказы</th>
+                <th class="r">АКБ</th>
+                <th class="r">План%</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.data.map((a, i) => `
+                <tr>
+                  <td class="rank">${i+1}</td>
+                  <td class="name-cell">${a.name}</td>
+                  <td class="r mono">${fmtMoney(a.revenue, cur)}</td>
+                  <td class="r mono">${a.orders}</td>
+                  <td class="r mono">${a.akb}</td>
+                  <td class="r ${pctClass(a.plan_pct)}">${a.plan_pct !== null ? a.plan_pct+'%' : '—'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    // Bar chart
+    const COLORS = ['#7c6dfa','#fa6d8a','#6dfabd','#fac96d','#6db4fa'];
+    const ctx = document.getElementById('agentsChart').getContext('2d');
+    charts['agentsChart'] = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: top.map(a => a.name.split(' ')[0]),
+        datasets: [{
+          data: top.map(a => a.revenue),
+          backgroundColor: top.map((_, i) => COLORS[i]),
+          borderRadius: 6,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false }, tooltip: {
+          callbacks: { label: ctx => fmtMoney(ctx.raw, cur) }
+        }},
+        scales: {
+          x: { grid: { display: false }, ticks: { color: '#6b6b8a', font: { size: 10 } } },
+          y: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: '#6b6b8a', font: { size: 10 }, callback: v => fmtMoney(v, cur) } }
+        }
+      }
+    });
+  } catch(e) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>${e.message}</div>`;
+  }
+}
+
+// ─── SCREEN: PRODUCTS ────────────────────────────────────
+async function loadProducts() {
+  const el = document.getElementById('products-content');
+  el.innerHTML = '<div class="loader"><div class="spinner"></div><div class="loader-text">Загрузка товаров...</div></div>';
+  destroyChart('productsChart');
+  try {
+    const data = await apiFetch('/api/products' + qs({group_by: state.groupBy, limit: 20}));
+    const cur = state.currency;
+    const top = data.data.slice(0, 8);
+
+    el.innerHTML = `
+      <div class="chart-wrap">
+        <div class="section-header" style="margin-bottom:12px">
+          <span class="section-title">ТОП ПРОДАЖ</span>
+          <span class="section-badge">${cur}</span>
+        </div>
+        <canvas id="productsChart" style="max-height:200px"></canvas>
+      </div>
+
+      <div class="section-header">
+        <span class="section-title">${state.groupBy === 'sku' ? 'ТОП SKU' : 'ПО ' + state.groupBy.toUpperCase()}</span>
+        <span class="section-badge">${data.data.length} позиций</span>
+      </div>
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Наименование</th>
+                <th class="r">Выручка</th>
+                <th class="r">Кол-во</th>
+                <th class="r">Заказов</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.data.map((p, i) => `
+                <tr>
+                  <td class="rank">${i+1}</td>
+                  <td class="name-cell" title="${p.name}">${p.name}</td>
+                  <td class="r mono">${fmtMoney(p.revenue, cur)}</td>
+                  <td class="r mono">${fmtNum(p.qty)}</td>
+                  <td class="r mono">${p.orders}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    // Horizontal bar chart
+    const COLORS = ['#7c6dfa','#fa6d8a','#6dfabd','#fac96d','#6db4fa','#fa6dfa','#adfa6d','#fa9b6d'];
+    const ctx = document.getElementById('productsChart').getContext('2d');
+    charts['productsChart'] = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: top.map(p => p.name.length > 20 ? p.name.slice(0,18)+'…' : p.name),
+        datasets: [{
+          data: top.map(p => p.revenue),
+          backgroundColor: top.map((_, i) => COLORS[i % COLORS.length]),
+          borderRadius: 4,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: { legend: { display: false }, tooltip: {
+          callbacks: { label: ctx => fmtMoney(ctx.raw, cur) }
+        }},
+        scales: {
+          x: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: '#6b6b8a', font: { size: 10 }, callback: v => fmtMoney(v, cur) } },
+          y: { grid: { display: false }, ticks: { color: '#e8e8f0', font: { size: 10 } } }
+        }
+      }
+    });
+  } catch(e) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>${e.message}</div>`;
+  }
+}
+
+// ─── SCREEN: CLIENTS ─────────────────────────────────────
+async function loadClients() {
+  const el = document.getElementById('clients-content');
+  el.innerHTML = '<div class="loader"><div class="spinner"></div><div class="loader-text">Загрузка клиентов...</div></div>';
+  destroyChart('clientsChart');
+  try {
+    const data = await apiFetch('/api/clients' + qs());
+    const cur = state.currency;
+
+    const akbPct = data.okb ? Math.round(data.akb / data.okb * 100) : 0;
+
+    el.innerHTML = `
+      <div class="cards-grid">
+        <div class="card" style="--card-accent:var(--accent)">
+          <div class="card-label">ОКБ</div>
+          <div class="card-value big">${fmtNum(data.okb)}</div>
+          <div class="card-sub">все клиенты</div>
+        </div>
+        <div class="card" style="--card-accent:var(--accent3)">
+          <div class="card-label">АКБ</div>
+          <div class="card-value big">${fmtNum(data.akb)}</div>
+          <div class="card-sub">${akbPct}% от ОКБ</div>
+        </div>
+        <div class="card" style="--card-accent:var(--green)">
+          <div class="card-label">Новые</div>
+          <div class="card-value">${fmtNum(data.new_clients)}</div>
+          <div class="card-sub">первая покупка</div>
+        </div>
+        <div class="card" style="--card-accent:var(--red)">
+          <div class="card-label">Потери</div>
+          <div class="card-value">${fmtNum(data.lost_clients)}</div>
+          <div class="card-sub">были в прошлом мес</div>
+        </div>
+      </div>
+
+      <!-- AKB vs OKB donut -->
+      <div class="chart-wrap">
+        <div class="section-header" style="margin-bottom:12px">
+          <span class="section-title">АКБ / ОКБ</span>
+          <span class="section-badge">${akbPct}%</span>
+        </div>
+        <div class="donut-wrap">
+          <canvas id="clientsChart"></canvas>
+          <div class="donut-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#7c6dfa"></div><div class="legend-name">АКБ активные</div><div class="legend-val">${data.akb}</div></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#2a2a3d"></div><div class="legend-name">Неактивные</div><div class="legend-val">${data.okb - data.akb}</div></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#3dffa0"></div><div class="legend-name">Новые</div><div class="legend-val">${data.new_clients}</div></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#ff5566"></div><div class="legend-name">Потери</div><div class="legend-val">${data.lost_clients}</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top clients -->
+      <div class="section-header">
+        <span class="section-title">ТОП КЛИЕНТОВ</span>
+        <span class="section-badge">${cur}</span>
+      </div>
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr><th>#</th><th>Клиент</th><th class="r">Выручка</th><th class="r">Заказов</th></tr>
+            </thead>
+            <tbody>
+              ${data.top_clients.map((c, i) => `
+                <tr>
+                  <td class="rank">${i+1}</td>
+                  <td class="name-cell" title="${c.name}">${c.name}</td>
+                  <td class="r mono">${fmtMoney(c.revenue, cur)}</td>
+                  <td class="r mono">${c.orders}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    // Donut
+    const ctx = document.getElementById('clientsChart').getContext('2d');
+    charts['clientsChart'] = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['АКБ', 'Неактивные'],
+        datasets: [{
+          data: [data.akb, Math.max(0, data.okb - data.akb)],
+          backgroundColor: ['#7c6dfa', '#2a2a3d'],
+          borderWidth: 0,
+        }]
+      },
+      options: {
+        responsive: false,
+        cutout: '68%',
+        plugins: { legend: { display: false } }
+      }
+    });
+  } catch(e) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>${e.message}</div>`;
+  }
+}
+
+// ─── START ────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
 
