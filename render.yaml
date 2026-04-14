@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: smartup-dashboard-api
+    runtime: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: SHEET_ID
+        sync: false   # set manually in Render dashboard
+      - key: USD_RATE
+        value: "12700"
+      - key: SHEET_GIDS
+        sync: false   # set manually: Orders:GID,Returns:GID,...
