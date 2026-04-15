@@ -32,11 +32,10 @@ DEFAULT_GIDS = {
     "Returns":"15","Currencies":"16",
 }
 
-# ── helpers ──────────────────────────────────────────────
-# ── in-memory cache (TTL 5 min) ──────────────────────────
+# ── cache (TTL 5 min) ────────────────────────────────────
 _cache: dict = {}
 _cache_ts: dict = {}
-CACHE_TTL = 300  # seconds
+CACHE_TTL = 300
 
 async def fetch_sheet(name):
     now = datetime.now().timestamp()
@@ -50,8 +49,6 @@ async def fetch_sheet(name):
     _cache[name] = data
     _cache_ts[name] = now
     return data
-
-
 
 def sf(v, d=0.0):
     try: return float(str(v).replace(" ","").replace(",",".")) if v else d
@@ -98,12 +95,6 @@ async def index():
     if api_url:
         html = html.replace("window.DASHBOARD_API || 'http://localhost:8000'", f"'{api_url}'")
     return HTMLResponse(html)
-
-
-@app.get("/api/cache/clear")
-async def clear_cache():
-    _cache.clear(); _cache_ts.clear()
-    return {"status": "cleared"}
 
 @app.get("/health")
 async def health():
