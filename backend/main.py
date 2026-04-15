@@ -33,12 +33,25 @@ DEFAULT_GIDS = {
 }
 
 # ── helpers ──────────────────────────────────────────────
+# ── in-memory cache (TTL 5 min) ──────────────────────────
+_cache: dict = {}
+_cache_ts: dict = {}
+CACHE_TTL = 300  # seconds
+
 async def fetch_sheet(name):
+    now = datetime.now().timestamp()
+    if name in _cache and (now - _cache_ts.get(name, 0)) < CACHE_TTL:
+        return _cache[name]
     gid = SHEET_GIDS.get(name) or DEFAULT_GIDS.get(name, "0")
     url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid={gid}"
-    async with httpx.AsyncClient(timeout=30, follow_redirects=True) as c:
+    async with httpx.AsyncClient(timeout=60, follow_redirects=True) as c:
         r = await c.get(url); r.raise_for_status()
-    return list(csv.DictReader(io.StringIO(r.text)))
+    data = list(csv.DictReader(io.StringIO(r.text)))
+    _cache[name] = data
+    _cache_ts[name] = now
+    return data
+
+
 
 def sf(v, d=0.0):
     try: return float(str(v).replace(" ","").replace(",",".")) if v else d
@@ -85,6 +98,12 @@ async def index():
     if api_url:
         html = html.replace("window.DASHBOARD_API || 'http://localhost:8000'", f"'{api_url}'")
     return HTMLResponse(html)
+
+
+@app.get("/api/cache/clear")
+async def clear_cache():
+    _cache.clear(); _cache_ts.clear()
+    return {"status": "cleared"}
 
 @app.get("/health")
 async def health():
